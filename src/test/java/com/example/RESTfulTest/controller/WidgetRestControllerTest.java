@@ -64,8 +64,6 @@ class WidgetRestControllerTest {
                 .andExpect(jsonPath("$[1].version", is(4)));
     }
 
-
-
     @Test
     @DisplayName("GET /rest/widget/1 - Not Found")
     void testGetWidgetByIdNotFound() throws Exception {
@@ -76,6 +74,30 @@ class WidgetRestControllerTest {
         mockMvc.perform(get("/rest/widget/{id}", 1L))
                 // Validate the response code
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("get /rest/widget/1")
+    void testGetWidgetById() throws Exception {
+        // Setup our mocked service
+        Widget widget = new Widget(1l, "Widget 1", "Description of widget 1", 1);
+        doReturn(Optional.of(widget)).when(service).findById(1L);
+
+        // Execute the GET request
+        mockMvc.perform(get("/rest/widget/{id}", 1L))
+                // Validate the response code and content type
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+
+                // Validate headers
+                .andExpect(header().string(HttpHeaders.LOCATION, "/rest/widget/1"))
+
+                // Validate the returned fields
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("Widget 1")))
+                .andExpect(jsonPath("$.description", is("Description of widget 1")))
+                .andExpect(jsonPath("$.version", is(1))
+                );
     }
 
     @Test
