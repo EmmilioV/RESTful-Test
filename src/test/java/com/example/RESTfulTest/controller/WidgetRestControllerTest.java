@@ -106,6 +106,58 @@ class WidgetRestControllerTest {
                 .andExpect(jsonPath("$.version", is(1)));
     }
 
+    @Test
+    @DisplayName("PUT /rest/widget/{id}")
+    void testUpdateWidget() throws Exception{
+        Widget widgetToPut = new Widget("New Widget", "This is my widget");
+        Widget widgetToReturnFindBy = new Widget(1L, "New Widget", "This is my widget", 1);
+        Widget widgetToReturnSave = new Widget(1L, "New Widget", "This is my favorite widget", 2);
+
+        doReturn(Optional.of(widgetToReturnFindBy)).when(service).findById(1L);
+        doReturn(widgetToReturnSave).when(service).save(any());
+
+        // Execute the PUT request
+        mockMvc.perform(put("/rest/widget/{id}", 1l)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.IF_MATCH, 1)
+                        .content(asJsonString(widgetToPut)))
+
+                // Validate the response code and content type
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+
+                // Validate headers
+                .andExpect(header().string(HttpHeaders.LOCATION, "/rest/widget/1"))
+                .andExpect(header().string(HttpHeaders.ETAG, "\"2\""))
+
+                // Validate the returned fields
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("New Widget")))
+                .andExpect(jsonPath("$.description", is("This is my favorite widget")))
+                .andExpect(jsonPath("$.version", is(2)));
+    }
+
+    @Test
+    @DisplayName("PUT /rest/widget/1")
+    void testUpdateWidgetNotFound() throws Exception {
+        // Setup our mocked service
+        Widget widgetToPut = new Widget("New Widget", "This is my widget");
+        Widget widgetToReturnFindBy = new Widget(1L, "New Widget", "This is my widget", 1);
+        Widget widgetToReturnSave = new Widget(1L, "New Widget", "This is my favorite widget", 2);
+
+        doReturn(Optional.of(widgetToReturnFindBy)).when(service).findById(1L);
+        doReturn(widgetToReturnSave).when(service).save(any());
+
+        // Execute the PUT request
+        mockMvc.perform(put("/rest/widget/{id}", 2l)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(HttpHeaders.IF_MATCH, 2)
+                        .content(asJsonString(widgetToPut)))
+
+                // Validate the response code
+                .andExpect(status().isNotFound());
+    }
+
 
     static String asJsonString(final Object obj) {
         try {
